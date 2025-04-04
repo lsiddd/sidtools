@@ -47,3 +47,7 @@ build.ninja
 
 # Local development files
 *.local
+insta_stories_download/cookies.json
+totp/recovery.txt
+bot_ru/main.py
+bot_ru/main2.py

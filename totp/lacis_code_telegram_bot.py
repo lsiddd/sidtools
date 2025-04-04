@@ -3,6 +3,8 @@ import hmac
 import time
 import struct
 from urllib.parse import urlparse, parse_qs
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
 def debug_print(label, value):
     print(f"[DEBUG] {label}:")
@@ -55,27 +57,37 @@ def generate_totp_with_debug(secret_b32, algorithm, digits, period):
                f"31-bit integer: {code_int}\n"
                f"Formatted: {code:0{digits}d}")
 
-    return f"{code:0{digits}d}"  # Fixed the missing closing brace
+    return f"{code:0{digits}d}"
 
-# --------------------------------------------------
-# Valid Example (No Errors)
-# --------------------------------------------------
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Hello! Send me a /code command to generate a TOTP.")
 
-print("🔍 Parsing URI...")
-params = parse_totp_uri(totp_uri)
+async def generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    totp_uri = r"aaaaaaaaaaaa the uri here"
+    
+    await update.message.reply_text("🔍 Parsing URI...")
+    params = parse_totp_uri(totp_uri)
 
-print("\n📋 Parameters:")
-print(f"Secret: {params['secret']}")
-print(f"Algorithm: {params['algorithm']}")
-print(f"Digits: {params['digits']}")
-print(f"Period: {params['period']} sec\n")
+    await update.message.reply_text(f"\n📋 Parameters:\nSecret: {params['secret']}\nAlgorithm: {params['algorithm']}\nDigits: {params['digits']}\nPeriod: {params['period']} sec\n")
 
-print("🔐 Generating Code...")
-code = generate_totp_with_debug(
-    params['secret'], 
-    params['algorithm'], 
-    params['digits'], 
-    params['period']
-)
+    await update.message.reply_text("🔐 Generating Code...")
+    code = generate_totp_with_debug(
+        params['secret'], 
+        params['algorithm'], 
+        params['digits'], 
+        params['period']
+    )
 
-print(f"\n✅ Final Code: {code}")
+    await update.message.reply_text(f"\n✅ Final Code: {code}")
+
+def main():
+    # Replace 'YOUR_BOT_API_KEY' with your actual Telegram Bot API key
+    application = Application.builder().token("7752389478:AAF07LrY8f0lqTZLPGm2L3EjNnHLPYHkHrs").build()
+
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("code", generate_code))
+
+    application.run_polling()
+
+if __name__ == '__main__':
+    main()
