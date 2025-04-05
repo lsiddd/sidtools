@@ -46,6 +46,5 @@ def analisar_sentimento(texto):
 texto_positivo = "Adorei este produto! Funciona perfeitamente e a entrega foi rápida."
 texto_negativo = "Péssima experiência. O serviço foi horrível e o produto quebrou no primeiro dia."
 
-# print(analisar_sentimento(texto_positivo))  # Exemplo: ('POSITIVO', 0.876)
-# print(analisar_sentimento(texto_negativo))  # Exemplo: ('NEGATIVO', 0.652)
-print(analisar_sentimento("o almoço vai ser ótimo"))  # Exemplo: ('NEGATIVO', 0.652)
+print(analisar_sentimento(texto_positivo))  # Exemplo: ('POSITIVO', 0.876)
+print(analisar_sentimento(texto_negativo))  # Exemplo: ('NEGATIVO', 0.652)

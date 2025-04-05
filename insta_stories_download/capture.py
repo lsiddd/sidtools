@@ -1,25 +1,44 @@
-from instacapture import InstaStory, InstaPost
+import sys
+import json
+import argparse
+from InstaStory import InstaStory
+from speech_recon import transcrever_video
+import os
 
-cookies = {
-    "ps_n": "1",
-    "datr": "XDDkZzvGrBXR9Gc1EAqwhiK-",
-    "ig_nrcb": "1",
-    "ds_user_id": "73704269273",
-    "csrftoken": "Q37jduXLFvzDxEYrIh5agAl2vTJNYN9d",
-    "ig_did": "11E63A34-58D2-486B-8B0C-3270B5252FFE",
-    "ps_l": "1",
-    "wd": "1366x621",
-    "mid": "Z-QwXgAEAAEVX5qNVBVCw-_wjvoF",
-    "sessionid": "73704269273%3AEOW2hK9PpCQE84%3A20%3AAYdKdcqTL2VaY6VYsFsicS_FxbLVFvAyBhdNRe_W9w",
-    "rur": "\"NHA\\05473704269273\\0541775046871:01f7d9045704dcae94cfff1cff61c3bcaf44e0be2babc6d8094b2898b1ba92ab0fe1ceda\""
-}
+def process_video(path):
+    """Helper function to handle speech recognition for videos"""
+    transcription = None
+    if path and os.path.exists(path):
+        print(f"Processing speech recognition for {path}", file=sys.stderr)
+        transcription = transcrever_video(path)
+        if transcription:
+            txt_path = os.path.splitext(path)[0] + ".txt"
+            with open(txt_path, "w", encoding="utf-8") as f:
+                f.write(transcription)
+            print(f"Saved transcription to {txt_path}", file=sys.stderr)
+    return transcription
 
+def main(username, cookies):
+    # Download stories
+    story_obj = InstaStory()
+    story_obj.cookies = cookies
+    story_obj.username = username
+    stories = story_obj.story_download()
+    
+    processed_stories = []
+    if stories and stories.get(username, {}).get('Story Data'):
+        for item in stories[username]['Story Data']:
+            if item['Link'].endswith('.mp4'):
+                item['transcription'] = process_video(item['Link'])
+            processed_stories.append(item)
+    
+    # Output JSON to stdout
+    print(json.dumps(processed_stories))
 
-story_obj = InstaStory()
-story_obj.cookies = cookies
-
-story_obj.username = 'virginia'
-story_obj.story_download()
-
-# story_obj.username = 'Enter username or profile link'
-# story_obj.story_download()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("username")
+    parser.add_argument("--cookies", type=json.loads, required=True)
+    args = parser.parse_args()
+    
+    main(args.username, args.cookies)
