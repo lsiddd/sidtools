@@ -63,7 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! Send me a /code command to generate a TOTP.")
 
 async def generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    totp_uri = r"aaaaaaaaaaaa the uri here"
+    totp_uri = r"TOTP_URI"
     
     await update.message.reply_text("🔍 Parsing URI...")
     params = parse_totp_uri(totp_uri)
@@ -82,7 +82,7 @@ async def generate_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     # Replace 'YOUR_BOT_API_KEY' with your actual Telegram Bot API key
-    application = Application.builder().token("7752389478:AAF07LrY8f0lqTZLPGm2L3EjNnHLPYHkHrs").build()
+    application = Application.builder().token("YOUR_BOT_API_KEY").build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("code", generate_code))
