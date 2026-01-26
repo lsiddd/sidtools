@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "file-organizer"
+version = "3.0.0"
+description = "Organize files on your hard drive using move operations"
+readme = "readme.md"
+requires-python = ">=3.10"
+dependencies = [
+    "typer>=0.9.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66.0",
+    # Intelligence layer
+    "python-magic>=0.4.27",
+    "xxhash>=3.4.0",
+    "pillow>=10.0.0",
+    "mutagen>=1.47.0",
+    "pypdf>=3.17.0",
+    # Watch mode
+    "watchdog>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+    "types-PyYAML>=6.0",
+    "types-tqdm>=4.66.0",
+    "types-Pillow>=10.0.0",
+]
+# Minimal install without intelligence features
+minimal = [
+    "typer>=0.9.0",
+    "pyyaml>=6.0",
+    "tqdm>=4.66.0",
+]
+
+[project.scripts]
+file-organizer = "file_organizer.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["file_organizer"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
