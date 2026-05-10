@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.clipboard-history" path="/org/gnome/shell/extensions/clipboard-history/">
+    <key name="max-items" type="u">
+      <default>20</default>
+      <range min="1" max="100"/>
+      <summary>Maximum clipboard history size</summary>
+      <description>Maximum number of copied text items kept in the clipboard history.</description>
+    </key>
+    <key name="poll-interval-seconds" type="u">
+      <default>1</default>
+      <range min="1" max="10"/>
+      <summary>Clipboard polling interval</summary>
+      <description>How many seconds to wait between clipboard checks.</description>
+    </key>
+  </schema>
+</schemalist>

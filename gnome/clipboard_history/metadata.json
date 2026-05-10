@@ -1,0 +1,15 @@
+{
+  "uuid": "clipboard-history@sidtools.lucas",
+  "name": "Clipboard History",
+  "description": "Shows recently copied text items from the GNOME Shell panel.",
+  "shell-version": [
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "50"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.clipboard-history",
+  "gettext-domain": "clipboard-history"
+}
