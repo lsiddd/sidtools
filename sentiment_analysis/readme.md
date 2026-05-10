@@ -14,9 +14,9 @@ This directory contains a Python script that performs sentiment analysis on text
 
 Install the necessary libraries:
 ```bash
-pip install transformers torch numpy
+uv pip install transformers torch numpy
 ```
-Note: PyTorch (`torch`) installation might require specific commands depending on your operating system and whether you want CPU or GPU support. Refer to the official PyTorch installation guide.
+Note: PyTorch (`torch`) installation may require a platform-specific command depending on CPU-only vs CUDA. See [pytorch.org/get-started](https://pytorch.org/get-started/locally/).
 
 ## Usage:
 

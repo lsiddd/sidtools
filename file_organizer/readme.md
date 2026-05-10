@@ -8,7 +8,7 @@ It features conflict resolution, depth limiting, handling of hidden items, and a
 
 ```bash
 # Install in development mode
-pip install -e .
+uv pip install -e .
 
 # Or install with dev dependencies for testing
 pip install -e ".[dev]"
@@ -127,7 +127,7 @@ See `config.yaml` for the full list of configurable options.
 ## Running as a Module
 
 ```bash
-python -m file_organizer git --source ~/projects --destination ~/organized --dry-run
+uv run -m file_organizer git --source ~/projects --destination ~/organized --dry-run
 ```
 
 ## Development
@@ -136,7 +136,7 @@ python -m file_organizer git --source ~/projects --destination ~/organized --dry
 
 ```bash
 # Run all tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run specific test file
 pytest tests/test_utils.py -v
@@ -148,13 +148,13 @@ pytest tests/ --cov=file_organizer
 ### Type Checking
 
 ```bash
-mypy file_organizer/
+uv run mypy file_organizer/
 ```
 
 ### Linting
 
 ```bash
-ruff check file_organizer/
+uv run ruff check file_organizer/
 ```
 
 ## Project Structure

@@ -14,19 +14,20 @@ This directory contains Python scripts for downloading Instagram stories and per
 *   `capture.py` depends on: `InstaStory`, `speech_recon`, `sys`, `json`, `argparse`, `os`.
 *   `speech_recon.py` depends on: `speech_recognition`, `moviepy`, `sys`, `os`.
 
-You will need to install these Python libraries using pip:
+Install the Python dependencies:
 
 ```bash
-pip install requests lxml pytz speech_recognition moviepy
-# moviepy might require additional system dependencies like ffmpeg
+uv pip install requests lxml pytz SpeechRecognition moviepy
 ```
+
+`moviepy` requires `ffmpeg` on the system PATH. Install it via your package manager (`sudo apt install ffmpeg`, `brew install ffmpeg`, etc.).
 
 ## Usage:
 
 The primary entry point for command-line use is `capture.py`. It requires the target Instagram username and authentication cookies.
 
 ```bash
-python insta_stories_download/capture.py <username> --cookies '<cookies_json_string>'
+uv run insta_stories_download/capture.py <username> --cookies '<cookies_json_string>'
 ```
 
 *   `<username>`: The Instagram username to fetch stories for.

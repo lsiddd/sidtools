@@ -14,7 +14,7 @@ This directory contains Python scripts related to generating Time-based One-Time
 
 Install necessary libraries:
 ```bash
-pip install python-telegram-bot
+uv pip install python-telegram-bot
 ```
 
 ## Usage:
@@ -23,7 +23,7 @@ pip install python-telegram-bot
     1.  Edit the `main.py` file and replace the placeholder `totp_uri` with your actual `otpauth://` secret URI.
     2.  Run the script:
         ```bash
-        python totp/main.py
+        uv run totp/main.py
         ```
     It will print the parsed parameters, detailed calculation steps, and the final TOTP code.
 
@@ -34,6 +34,6 @@ pip install python-telegram-bot
         *   Replace `r"TOTP_URI"` with your actual `otpauth://` secret URI.
     3.  Run the script:
         ```bash
-        python totp/lacis_code_telegram_bot.py
+        uv run totp/lacis_code_telegram_bot.py
         ```
     The bot will start polling. Send the `/code` command to the bot in Telegram to receive the TOTP code.

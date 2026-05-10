@@ -1,60 +1,213 @@
-
 # Sid's Tools & Utils
 
-This repository aggregates a collection of distinct tools and utilities, each addressing specific tasks across various domains. Each component is housed in its own subdirectory, complete with dedicated documentation.
+A collection of standalone tools and utilities, each in its own subdirectory with dedicated documentation. Ordered below from most broadly useful to most specific.
 
-Explore the directories below for detailed information on each tool.
+---
 
-## Contents:
+## file_organizer/
 
-*   **file_organizer/**:
-    A Python script designed for comprehensive filesystem management. Its capabilities include automated discovery and relocation of Git repositories, pattern-based cleanup of unwanted files and directories (like build artifacts or cache folders), and organizing files into category-specific subdirectories based on type. Key features include configurable depth limits for organization, multiple conflict resolution strategies for naming clashes during moves, and an essential dry-run mode for previewing operations safely.
-    *   *Technology:* Python
-    *   *For full details:* Refer to [`./file_organizer/readme.md`](./file_organizer/readme.md).
+Python CLI for bulk filesystem operations. Three subcommands:
 
-*   **expl/**:
-    Contains PowerShell scripts for establishing lightweight HTTP file servers. These scripts offer functionalities such as basic directory listing, serving files, and handling download requests. Variations provide features like chunked transfers and range request support for resuming downloads.
-    *   *Technology:* PowerShell
-    *   *For full details:* Refer to [`./expl/readme.md`](./expl/readme.md).
+- **`git`** — recursively finds Git repositories under a source tree and moves them to a centralized destination, with configurable conflict resolution (`number`, `timestamp`, `uuid`).
+- **`cleanup`** — removes build artifacts and cache directories (`__pycache__`, `node_modules`, `target`, `.venv`, `.DS_Store`, and more) across a directory tree.
+- **`organize`** — sorts files by type into categorized subdirectories (`videos/`, `audio/`, `images/`, `documents/pdf/`, `code/python/`, etc.), respecting a configurable depth limit.
 
-*   **insta_stories_download/**:
-    A set of Python scripts for programmatically downloading Instagram stories. Utilizing user cookie data for authentication, these scripts can fetch story media and associated metadata. An integrated component offers optional speech recognition capabilities for video stories, saving transcriptions alongside the media.
-    *   *Technology:* Python (with `requests`, `lxml`, `pytz`, `speech_recognition`, `moviepy`)
-    *   *For full details:* Refer to [`./insta_stories_download/readme.md`](./insta_stories_download/readme.md).
+All modes support `--dry-run` for safe previewing, `--include-hidden`, `--cleanup-empty-dirs`, and `--verbose`. Installable as a package via `pyproject.toml`.
 
-*   **latex_compile/**:
-    A Bash script specifically engineered to streamline the compilation workflow for LaTeX documents. It manages the necessary multi-pass compilation sequence, particularly relevant for documents incorporating bibliographies processed by Biber. The script includes dependency checks and options for cleanup or automated recompilation upon file changes.
-    *   *Technology:* Bash (orchestrating `pdflatex`, `biber`, `inotify-tools`, etc.)
-    *   *For full details:* Refer to [`./latex_compile/readme.md`](./latex_compile/readme.md).
+```bash
+uv run file-organizer git -s ~/scattered -d ~/organized --dry-run
+uv run file-organizer cleanup -s ~/projects
+uv run file-organizer organize -s ~/downloads -d ~/sorted --max-depth 2
+```
 
-*   **ocr/**:
-    A Python script for performing Optical Character Recognition on both image and video files. It interfaces with the Tesseract OCR engine and uses OpenCV for media handling, enabling the extraction of text from visual content. Supports configurable languages and optional image preprocessing.
-    *   *Technology:* Python (with `pytesseract`, `opencv-python`)
-    *   *For full details:* Refer to [`./ocr/readme.md`](./ocr/readme.md).
+Technology: Python (Typer). See [`./file_organizer/readme.md`](./file_organizer/readme.md).
 
-*   **photo_finder_cpp/**:
-    A C++ application designed to recursively scan a source directory, identify image files likely originating from a camera based on the presence of specific EXIF metadata (like make or model), and copy these files to a designated output directory. The utility efficiently avoids copying files that already exist in the destination.
-    *   *Technology:* C++ (with `Exiv2`, `CLI11`, `spdlog`)
-    *   *For full details:* Refer to [`./photo_finder_cpp/readme.md`](./photo_finder_cpp/readme.md).
+---
 
-*   **sentiment_analysis/**:
-    Contains a Python script leveraging a pre-trained Hugging Face transformer model for sentiment analysis. While the model is fine-tuned for Brazilian Portuguese financial text, it provides robust positive/negative/neutral classification and confidence scores for general Portuguese text. Designed for integration as a module.
-    *   *Technology:* Python (with `transformers`, `torch`, `numpy`)
-    *   *For full details:* Refer to [`./sentiment_analysis/readme.md`](./sentiment_analysis/readme.md).
+## pdf_to_md/
 
-*   **sizes_cc/**:
-    A C++ program for analyzing disk space utilization within a specified directory tree. It traverses the filesystem to aggregate the total size and count for files of each distinct extension, presenting a summarized report. Features include configurable depth limits and options for sorting and displaying results.
-    *   *Technology:* C++ (with `CLI11`)
-    *   *For full details:* Refer to [`./sizes_cc/readme.md`](./sizes_cc/readme.md).
+Two `uv`-runnable scripts for converting PDFs to Markdown, covering different tradeoffs:
 
-*   **tampermonkey_scripts/**:
-    A collection of JavaScript userscripts intended for deployment via browser extensions like Tampermonkey. Each script targets specific websites to modify their behavior or add minor functionalities, such as enforcing temporary chats on ChatGPT or automating regeneration attempts on DeepSeek Chat under certain conditions.
-    *   *Technology:* JavaScript
-    *   *For full details:* Refer to [`./tampermonkey_scripts/readme.md`](./tampermonkey_scripts/readme.md).
+**`pdf_to_md.py`** uses [marker-pdf](https://github.com/VikParuchuri/marker) — ML-based layout analysis with GPU support. Best for complex documents: multi-column layouts, mixed text/figures, scanned pages. Supports `--force-ocr` and a `--debug` mode that saves layout images and bounding-box JSON.
 
-*   **totp/**:
-    Contains Python scripts focused on the generation of Time-based One-Time Passwords (TOTP), commonly used in two-factor authentication. Includes a standalone script that demonstrates the code generation process with step-by-step debug output, and a minimal Telegram bot implementation to provide TOTP codes on demand from a configured URI.
-    *   *Technology:* Python (with standard libraries like `base64`, `hmac`, `time`, `struct`, `urllib.parse`, and `python-telegram-bot` for the bot)
-    *   *For full details:* Refer to [`./totp/readme.md`](./totp/readme.md).
+**`pdf_to_md_light.py`** uses [pymupdf4llm](https://github.com/pymupdf/RAG) — no GPU, no large models, near-instant on native PDFs. OCR runs selectively only on pages that need it. Supports image extraction to disk or embedded as base64, selective page ranges, and Tesseract language configuration.
 
-For detailed setup instructions, dependencies, and specific usage examples for any of these tools, consult the individual `readme.md` file located within the corresponding subdirectory.
+```bash
+uv run pdf_to_md/pdf_to_md.py paper.pdf                        # marker-pdf, full ML
+uv run pdf_to_md/pdf_to_md_light.py scan.pdf --force-ocr --lang por  # pymupdf, fast
+uv run pdf_to_md/pdf_to_md_light.py thesis.pdf --pages 0,5-10 --images
+```
+
+Technology: Python (uv scripts, marker-pdf / pymupdf4llm).
+
+---
+
+## youtube_transcripts/
+
+Downloads a YouTube video's transcript (auto-generated or manual) from a URL or bare video ID. Resolves all URL formats: `youtu.be`, `/shorts/`, `/embed/`, `/live/`, and standard `?v=` links.
+
+Output formats: plain text (default), SRT with timestamps, or raw JSON. Language priority falls back through `pt-BR → pt → en` by default, configurable per invocation. Output file name derived from the video ID when no explicit path is given.
+
+```bash
+uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py https://youtu.be/dQw4w9WgXcQ
+uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py <url> -f srt -o sub.srt
+uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py <url> -l en -l pt
+```
+
+Technology: Python (youtube-transcript-api). See [`./youtube_transcripts/requirements.txt`](./youtube_transcripts/requirements.txt).
+
+---
+
+## TextSanitize/
+
+Multi-threaded C++ CLI for converting text file encodings in-place. Handles any encoding pair supported by `iconv`, including the common case of latin1 files misidentified as UTF-8.
+
+Key behaviors: atomic replacement via `mkstemp` + `rename(2)` (no partial writes), two strategies for unrepresentable bytes (drop the byte or remove the whole line), recursive directory processing parallelized across all CPU cores, and session resumption for interrupted directory runs.
+
+```bash
+meson setup build && meson compile -C build
+build/file_cleaner ./legacy -s latin1 -t UTF-8 -r -f
+build/file_cleaner document.txt -t latin1 -f --remove-invalid-lines -v
+```
+
+Technology: C++17 (Meson, iconv, mmap). See [`./TextSanitize/readme.md`](./TextSanitize/readme.md).
+
+---
+
+## latex_compile/
+
+Bash script that automates the full LaTeX compilation sequence, including the `pdflatex → biber → pdflatex → pdflatex` cycle needed for Biber bibliographies. Three modes: build and open the PDF (`-b`), monitor source files and recompile on change (`-m`), and clean build artifacts (`-c`). Includes dependency checks and installation hints for apt-based systems.
+
+```bash
+./latex_compile/latex_build.sh -b                    # compile main.tex and open
+./latex_compile/latex_build.sh report.tex -m         # watch mode
+./latex_compile/latex_build.sh -c                    # clean build dir
+```
+
+Technology: Bash (pdflatex, biber, inotify-tools). See [`./latex_compile/readme.md`](./latex_compile/readme.md).
+
+---
+
+## ocr/
+
+Python script for extracting text from image and video files via Tesseract. Handles grayscale conversion and adaptive thresholding as preprocessing, configurable language codes, and frame-interval sampling for video. Output goes to stdout or a file.
+
+```bash
+uv run ocr/main.py scan.png -l por+eng
+uv run ocr/main.py lecture.mp4 -f 60 -o transcript.txt
+uv run ocr/main.py image.jpg --no-preprocess
+```
+
+Technology: Python (pytesseract, opencv-python). See [`./ocr/readme.md`](./ocr/readme.md).
+
+---
+
+## photo_finder_cpp/
+
+C++ utility that recursively scans a directory for image files containing camera EXIF metadata (make/model tags) and copies them to a destination directory, skipping files already present by filename. Reports progress and a summary of scanned/copied/skipped/error counts.
+
+```bash
+./photo_finder /mnt/card /home/user/photos
+```
+
+Technology: C++17 (Exiv2, CLI11, spdlog). See [`./photo_finder_cpp/readme.md`](./photo_finder_cpp/readme.md).
+
+---
+
+## translate/
+
+Python module wrapping the Helsinki-NLP OPUS-MT model for English-to-Portuguese neural translation. Handles sentence splitting and batch processing internally. Intended for import rather than direct invocation.
+
+```python
+from translate import translate_english_to_portuguese
+result = translate_english_to_portuguese("Hello world")
+```
+
+Technology: Python (transformers). See [`./translate/readme.md`](./translate/readme.md).
+
+---
+
+## totp/
+
+Two Python scripts for TOTP (RFC 6238) code generation from an `otpauth://` URI:
+
+- **`main.py`** — standalone script with step-by-step debug output showing the full HMAC-SHA1 derivation. Useful for understanding or auditing the algorithm.
+- **`lacis_code_telegram_bot.py`** — minimal Telegram bot that returns the current TOTP code on `/code`. Requires a bot API key and the `python-telegram-bot` library.
+
+Technology: Python (standard library + python-telegram-bot). See [`./totp/readme.md`](./totp/readme.md).
+
+---
+
+## sizes_cc/
+
+C++ program that traverses a directory tree and reports total size and file count per extension, sorted by size, count, or both. Supports depth limiting and a top-N filter. Progress indicator on stderr during scan.
+
+```bash
+./sizes_cc/sizes ~/downloads --top 10 --mode both
+./sizes_cc/sizes /var/log --depth 1
+```
+
+Technology: C++17 (CLI11). See [`./sizes_cc/readme.md`](./sizes_cc/readme.md).
+
+---
+
+## gnome/clipboard_history/
+
+GNOME Shell extension that adds a panel indicator tracking recently copied text. Items can be re-selected from the menu (which moves them back to the top of the list). History size and polling interval are configurable via the preferences dialog. Tracks text clipboard contents only.
+
+```sh
+make -C gnome/clipboard_history install
+gnome-extensions enable clipboard-history@sidtools.lucas
+gnome-extensions prefs clipboard-history@sidtools.lucas
+```
+
+Technology: JavaScript (GNOME Shell API, GSettings). See [`./gnome/clipboard_history/README.md`](./gnome/clipboard_history/README.md).
+
+---
+
+## tampermonkey_scripts/
+
+Two browser userscripts (Tampermonkey/Violentmonkey):
+
+- **`tampermonkey_chatgpt_temporary.js`** — appends `temporary-chat=true` to ChatGPT URLs, forcing all sessions into temporary mode.
+- **`tampermonkey_regenerate_deepseek.js`** — auto-clicks the Regenerate button on DeepSeek Chat when a server-busy error is detected.
+
+Install by pasting each script into the Tampermonkey editor. See [`./tampermonkey_scripts/readme.md`](./tampermonkey_scripts/readme.md).
+
+---
+
+## sentiment_analysis/
+
+Python module wrapping `lucas-leme/FinBERT-PT-BR` (a BERT model fine-tuned on Brazilian Portuguese financial text) for positive/negative/neutral classification with confidence scores. Designed for import; works reasonably on general Portuguese text despite the financial training domain.
+
+```python
+from sentiment_analysis.sentiment import analisar_sentimento
+sentimento, confianca = analisar_sentimento("Este produto é excelente.")
+```
+
+Technology: Python (transformers, torch). See [`./sentiment_analysis/readme.md`](./sentiment_analysis/readme.md).
+
+---
+
+## insta_stories_download/
+
+Python scripts for downloading Instagram stories using session cookie authentication. `capture.py` downloads stories for a given username to `./story/<username>/` and prints story metadata as JSON on stdout. `speech_recon.py` optionally transcribes audio from video stories via Google Speech Recognition.
+
+```bash
+python insta_stories_download/capture.py <username> --cookies '{"sessionid": "..."}'
+```
+
+Technology: Python (requests, lxml, moviepy, speech_recognition). See [`./insta_stories_download/readme.md`](./insta_stories_download/readme.md).
+
+---
+
+## expl/
+
+PowerShell scripts for running lightweight HTTP file servers on Windows. Three variants covering basic directory listing (`dllhost.ps1`), range request support for resumable downloads (`syswinmanager.ps1`), and an enhanced version with chunked transfer (`windllhost.ps1`). All serve on port 3306 and require running as Administrator.
+
+```powershell
+.\expl\syswinmanager.ps1
+# access at http://server:3306/
+```
+
+Technology: PowerShell. See [`./expl/readme.md`](./expl/readme.md).

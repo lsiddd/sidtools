@@ -17,13 +17,13 @@ You must also install the Tesseract OCR engine itself on your system and ensure 
 Install the Python dependencies:
 
 ```bash
-pip install pytesseract opencv-python
+uv pip install pytesseract opencv-python
 ```
 
 ## Usage:
 
 ```bash
-python ocr/main.py <input_file> [options]
+uv run ocr/main.py <input_file> [options]
 ```
 
 *   `<input_file>`: Path to the image or video file to process.
@@ -39,13 +39,13 @@ python ocr/main.py <input_file> [options]
 
 ```bash
 # Extract text from an image with default settings
-python ocr/main.py path/to/my_image.png
+uv run ocr/main.py path/to/my_image.png
 
 # Extract text from a video using specific languages and save to file
-python ocr/main.py path/to/my_video.mp4 -l eng+spa -o video_transcription.txt
+uv run ocr/main.py path/to/my_video.mp4 -l eng+spa -o video_transcription.txt
 
 # Extract text from an image without preprocessing
-python ocr/main.py path/to/other_image.jpg --no-preprocess
+uv run ocr/main.py path/to/other_image.jpg --no-preprocess
 ```
 
 Accuracy depends heavily on input quality and the installed Tesseract language data.
