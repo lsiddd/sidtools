@@ -19,7 +19,6 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
-from youtube_transcript_api.formatters import JSONFormatter
 
 
 DEFAULT_LANGUAGES = ("pt-BR", "pt", "en")
@@ -65,15 +64,18 @@ def slugify(title: str) -> str:
     return (title or "transcript")[:200]
 
 
-def list_languages(video_id: str) -> None:
+def _transcript_list(video_id: str):
     api = YouTubeTranscriptApi()
     try:
-        transcript_list = api.list_transcripts(video_id)
+        return api.list(video_id)
     except TranscriptsDisabled:
         raise TranscriptError(f"transcrições desabilitadas para {video_id}")
     except Exception as exc:
-        raise TranscriptError(str(exc)) from exc
+        raise TranscriptError(f"erro ao acessar transcrições: {exc}") from exc
 
+
+def list_languages(video_id: str) -> None:
+    transcript_list = _transcript_list(video_id)
     print(f"Idiomas disponíveis para {video_id}:")
     for t in transcript_list:
         flags = []
@@ -86,13 +88,7 @@ def list_languages(video_id: str) -> None:
 
 
 def fetch_transcript(video_id: str, languages: list[str]) -> tuple[list[dict], str]:
-    api = YouTubeTranscriptApi()
-    try:
-        transcript_list = api.list_transcripts(video_id)
-    except TranscriptsDisabled:
-        raise TranscriptError(f"transcrições desabilitadas para {video_id}")
-    except Exception as exc:
-        raise TranscriptError(f"erro ao acessar transcrições: {exc}") from exc
+    transcript_list = _transcript_list(video_id)
 
     try:
         transcript = transcript_list.find_transcript(languages)
@@ -103,9 +99,7 @@ def fetch_transcript(video_id: str, languages: list[str]) -> tuple[list[dict], s
             raise TranscriptError(f"nenhuma transcrição disponível para {video_id}")
 
     fetched = transcript.fetch()
-    if hasattr(fetched, "language_code"):
-        return json.loads(JSONFormatter().format_transcript(fetched)), fetched.language_code
-    return list(fetched), transcript.language_code
+    return fetched.to_raw_data(), fetched.language_code
 
 
 def clean_annotations(items: list[dict]) -> list[dict]:
