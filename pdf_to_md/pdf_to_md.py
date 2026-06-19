@@ -6,15 +6,19 @@
 # ///
 
 """
-Converte um PDF para Markdown usando marker-pdf.
+Converte um PDF (ou todos os PDFs de uma pasta) para Markdown usando marker-pdf.
 
 Uso:
-    uv run pdf_to_md.py <arquivo.pdf> [saida.md]
+    uv run pdf_to_md.py <arquivo.pdf|pasta> [saida]
 
 Argumentos:
-    arquivo.pdf   Caminho para o PDF de entrada (obrigatório)
-    saida.md      Caminho para o arquivo Markdown gerado (opcional)
-                  Padrão: mesmo nome do PDF, extensão .md
+    arquivo.pdf|pasta   Caminho para o PDF de entrada ou para uma pasta
+                        contendo PDFs (obrigatório)
+    saida               Caminho de saída (opcional)
+                        - Se a entrada for um arquivo: caminho do .md gerado
+                          (padrão: mesmo nome do PDF, extensão .md)
+                        - Se a entrada for uma pasta: pasta onde os .md
+                          gerados serão salvos (padrão: mesma pasta de entrada)
 
 Flags opcionais:
     --force-ocr   Força OCR em todas as páginas (útil para PDFs escaneados
@@ -25,6 +29,8 @@ Exemplos:
     uv run pdf_to_md.py relatorio.pdf
     uv run pdf_to_md.py relatorio.pdf saida/relatorio.md
     uv run pdf_to_md.py artigo.pdf --force-ocr
+    uv run pdf_to_md.py pasta_com_pdfs/
+    uv run pdf_to_md.py pasta_com_pdfs/ pasta_de_saida/
 """
 
 import argparse
@@ -41,14 +47,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "pdf",
         type=Path,
-        help="Caminho para o arquivo PDF de entrada.",
+        help="Caminho para o arquivo PDF de entrada ou para uma pasta com PDFs.",
     )
     parser.add_argument(
         "output",
         type=Path,
         nargs="?",
         default=None,
-        help="Caminho para o arquivo Markdown de saída (padrão: mesmo nome do PDF).",
+        help=(
+            "Caminho de saída: arquivo .md (entrada = arquivo) ou pasta de "
+            "destino (entrada = pasta). Padrão: ao lado da entrada."
+        ),
     )
     parser.add_argument(
         "--force-ocr",
@@ -69,13 +78,12 @@ def resolve_output(pdf: Path, output: Path | None) -> Path:
     return pdf.with_suffix(".md")
 
 
-def convert(pdf: Path, output: Path, force_ocr: bool, debug: bool) -> None:
+def build_converter(force_ocr: bool, debug: bool):
     # Importações pesadas ficam aqui para que erros de dependência
     # apareçam com mensagem amigável, após a validação dos argumentos.
     try:
         from marker.converters.pdf import PdfConverter
         from marker.models import create_model_dict
-        from marker.output import text_from_rendered
     except ImportError as exc:
         print(
             f"[erro] Falha ao importar marker-pdf: {exc}\n"
@@ -93,8 +101,13 @@ def convert(pdf: Path, output: Path, force_ocr: bool, debug: bool) -> None:
     if debug:
         converter_kwargs.setdefault("config", {})["debug_pdf_images"] = True
 
+    return PdfConverter(**converter_kwargs)
+
+
+def convert(converter, pdf: Path, output: Path) -> None:
+    from marker.output import text_from_rendered
+
     print(f"[info] Convertendo: {pdf}")
-    converter = PdfConverter(**converter_kwargs)
     rendered = converter(str(pdf))
 
     markdown_text, _, metadata = text_from_rendered(rendered)
@@ -106,12 +119,44 @@ def convert(pdf: Path, output: Path, force_ocr: bool, debug: bool) -> None:
     print(f"[ok]   Markdown salvo em: {output}  ({pages} página(s))")
 
 
+def convert_directory(pdf_dir: Path, output_dir: Path | None, force_ocr: bool, debug: bool) -> None:
+    pdfs = sorted(p for p in pdf_dir.iterdir() if p.is_file() and p.suffix.lower() == ".pdf")
+    if not pdfs:
+        print(f"[erro] Nenhum PDF encontrado em: {pdf_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"[info] {len(pdfs)} PDF(s) encontrado(s) em: {pdf_dir}")
+    converter = build_converter(force_ocr=force_ocr, debug=debug)
+
+    for pdf in pdfs:
+        if output_dir is not None:
+            output = output_dir / pdf.with_suffix(".md").name
+        else:
+            output = pdf.with_suffix(".md")
+        convert(converter=converter, pdf=pdf, output=output)
+
+
 def main() -> None:
     args = parse_args()
 
     if not args.pdf.exists():
-        print(f"[erro] Arquivo não encontrado: {args.pdf}", file=sys.stderr)
+        print(f"[erro] Caminho não encontrado: {args.pdf}", file=sys.stderr)
         sys.exit(1)
+
+    if args.pdf.is_dir():
+        if args.output is not None and args.output.suffix:
+            print(
+                f"[erro] A entrada é uma pasta; informe uma pasta de saída, não um arquivo: {args.output}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        convert_directory(
+            pdf_dir=args.pdf,
+            output_dir=args.output,
+            force_ocr=args.force_ocr,
+            debug=args.debug,
+        )
+        return
 
     if args.pdf.suffix.lower() != ".pdf":
         print(
@@ -120,13 +165,8 @@ def main() -> None:
         )
 
     output = resolve_output(args.pdf, args.output)
-
-    convert(
-        pdf=args.pdf,
-        output=output,
-        force_ocr=args.force_ocr,
-        debug=args.debug,
-    )
+    converter = build_converter(force_ocr=args.force_ocr, debug=args.debug)
+    convert(converter=converter, pdf=args.pdf, output=output)
 
 
 if __name__ == "__main__":

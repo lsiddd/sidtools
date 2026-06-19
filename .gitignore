@@ -59,3 +59,5 @@ bot_ru/main2.py
 
 *.shell-extension.zip
 schemas/gschemas.compiled
+qrcode/target
+youtube_transcripts/*txt

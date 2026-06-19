@@ -3,9 +3,10 @@
 # requires-python = ">=3.11"
 # dependencies = [
 #   "youtube-transcript-api",
+#   "yt-dlp",
 # ]
 # ///
-"""Download a YouTube video's transcript from its URL."""
+"""Download transcripts from YouTube videos or channels."""
 
 from __future__ import annotations
 
@@ -18,6 +19,7 @@ import urllib.request
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import yt_dlp
 from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
 
 
@@ -26,6 +28,10 @@ ANNOTATION_RE = re.compile(r"\[.*?\]|\(.*?\)")
 
 
 class TranscriptError(Exception):
+    pass
+
+
+class ChannelError(Exception):
     pass
 
 
@@ -49,6 +55,65 @@ def extract_video_id(url_or_id: str) -> str:
             return path_parts[1]
 
     raise ValueError(f"não foi possível extrair o ID do vídeo: {url_or_id!r}")
+
+
+def channel_videos_url(channel: str) -> str:
+    value = channel.strip().rstrip("/")
+    if value.startswith("@"):
+        return f"https://www.youtube.com/{value}/videos"
+
+    parsed = urlparse(value)
+    if not parsed.scheme:
+        raise ValueError(
+            "canal deve ser uma URL do YouTube ou um @handle "
+            f"(recebido: {channel!r})"
+        )
+    if "youtube.com" not in parsed.netloc.lower():
+        raise ValueError(f"URL de canal inválida: {channel!r}")
+
+    path_parts = [part for part in parsed.path.split("/") if part]
+    if not path_parts:
+        raise ValueError(f"URL de canal inválida: {channel!r}")
+    if path_parts[-1] in {"featured", "shorts", "streams", "playlists", "community"}:
+        path_parts.pop()
+    if not path_parts or path_parts[-1] != "videos":
+        path_parts.append("videos")
+    return f"https://www.youtube.com/{'/'.join(path_parts)}"
+
+
+def fetch_channel_video_ids(channel: str, limit: int | None) -> list[str]:
+    try:
+        url = channel_videos_url(channel)
+    except ValueError as exc:
+        raise ChannelError(str(exc)) from exc
+
+    options = {
+        "extract_flat": "in_playlist",
+        "ignoreerrors": True,
+        "quiet": True,
+        "no_warnings": True,
+    }
+    if limit is not None:
+        options["playlistend"] = limit
+
+    try:
+        with yt_dlp.YoutubeDL(options) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception as exc:
+        raise ChannelError(f"erro ao listar vídeos do canal: {exc}") from exc
+
+    entries = info.get("entries", []) if info else []
+    video_ids = []
+    for entry in entries:
+        if not entry:
+            continue
+        video_id = entry.get("id")
+        if isinstance(video_id, str) and re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+            video_ids.append(video_id)
+
+    if not video_ids:
+        raise ChannelError("nenhum vídeo encontrado no canal")
+    return video_ids
 
 
 def fetch_video_title(video_id: str) -> str:
@@ -160,7 +225,24 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Baixa a transcrição de um ou mais vídeos do YouTube.",
     )
-    parser.add_argument("urls", nargs="+", metavar="url", help="URL do YouTube ou ID do vídeo")
+    parser.add_argument("urls", nargs="*", metavar="url", help="URL do YouTube ou ID do vídeo")
+    parser.add_argument(
+        "--channel",
+        metavar="CHANNEL",
+        help="URL ou @handle de um canal do YouTube.",
+    )
+    channel_amount = parser.add_mutually_exclusive_group()
+    channel_amount.add_argument(
+        "--latest",
+        type=int,
+        metavar="N",
+        help="Baixa as transcrições dos N vídeos mais recentes do canal.",
+    )
+    channel_amount.add_argument(
+        "--all",
+        action="store_true",
+        help="Baixa as transcrições de todos os vídeos do canal.",
+    )
     parser.add_argument(
         "-l", "--language",
         dest="languages",
@@ -205,7 +287,20 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Inclui marcação de tempo em cada linha (somente formato txt).",
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    if args.channel and args.urls:
+        parser.error("--channel não pode ser usado junto com URLs de vídeos")
+    if args.channel and args.latest is None and not args.all:
+        parser.error("--channel exige --latest N ou --all")
+    if not args.channel and (args.latest is not None or args.all):
+        parser.error("--latest e --all só podem ser usados com --channel")
+    if not args.channel and not args.urls:
+        parser.error("informe ao menos uma URL/ID de vídeo ou use --channel")
+    if args.latest is not None and args.latest < 1:
+        parser.error("--latest deve ser maior que zero")
+
+    return args
 
 
 def process_video(video_id: str, args: argparse.Namespace) -> None:
@@ -244,7 +339,18 @@ def process_video(video_id: str, args: argparse.Namespace) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv or sys.argv[1:])
+    args = parse_args(argv if argv is not None else sys.argv[1:])
+
+    if args.channel:
+        try:
+            args.urls = fetch_channel_video_ids(args.channel, None if args.all else args.latest)
+            print(
+                f"Canal: {len(args.urls)} vídeo(s) encontrado(s).",
+                file=sys.stderr,
+            )
+        except ChannelError as exc:
+            print(f"Erro: {exc}", file=sys.stderr)
+            return 1
 
     if args.output and len(args.urls) > 1:
         print("Erro: -o/--output só pode ser usado com uma única URL.", file=sys.stderr)

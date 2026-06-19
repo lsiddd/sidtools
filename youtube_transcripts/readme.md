@@ -1,6 +1,7 @@
 # youtube_transcripts
 
-Downloads a YouTube video's transcript (auto-generated or manually submitted) from a URL or bare video ID.
+Downloads transcripts (auto-generated or manually submitted) from YouTube videos
+or from the latest/all videos published by a channel.
 
 ## URL formats supported
 
@@ -24,6 +25,9 @@ uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py 
 | `-l`, `--language LANG` | Preferred language (repeatable, in priority order) |
 | `-f`, `--format` | Output format: `txt` (default), `srt`, `json` |
 | `-o`, `--output PATH` | Output file path (default: `transcript_<video_id>.<format>`) |
+| `--channel CHANNEL` | Channel URL or `@handle` |
+| `--latest N` | With `--channel`, download the latest N videos |
+| `--all` | With `--channel`, download all videos |
 
 Default language fallback order: `pt-BR → pt → en`.
 
@@ -41,6 +45,12 @@ uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py 
 
 # Raw JSON
 uv run --with youtube-transcript-api youtube_transcripts/download_transcript.py <url> -f json
+
+# Latest 10 videos from a channel
+uv run youtube_transcripts/download_transcript.py --channel @handle --latest 10
+
+# Every video from a channel
+uv run youtube_transcripts/download_transcript.py --channel https://www.youtube.com/@handle --all
 ```
 
 ## Output formats
@@ -55,6 +65,8 @@ Declared in `requirements.txt`:
 
 ```
 youtube-transcript-api>=1.0.0
+yt-dlp
 ```
 
-Install with `uv` or pass `--with youtube-transcript-api` directly to `uv run` as shown above.
+The script's PEP 723 header lets `uv run download_transcript.py ...` install both
+dependencies automatically.
